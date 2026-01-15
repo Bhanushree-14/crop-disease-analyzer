@@ -9,7 +9,7 @@
 An enterprise-grade AI-powered leaf disease detection system featuring a dual-interface architecture: a FastAPI backend service and an interactive Streamlit web application. Built with Meta's Llama Vision models via Groq API, this system provides accurate disease identification, severity assessment, and actionable treatment recommendations for agricultural and horticultural applications.
 
 ## System Demo
-![Leaf Disease Detection Demo](https://github.com/Bhanushree-14/crop-disease-analyzer/blob/main/Media/video.gif)
+![Leaf Disease Detection Demo](./Media/crop_video.mp4)
 
 *Experience the power of AI-driven plant health analysis in action*
 
