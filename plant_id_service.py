@@ -11,17 +11,31 @@ from kindwise import PlantApi
 class PlantIDService:
     """Service class for Plant.id API operations."""
     
-    def __init__(self, api_key: str = None):
+        def __init__(self, api_key: str = None):
         """
         Initialize the Plant.id API client.
         
         Args:
-            api_key: Your Plant.id API key. If None, tries to get from environment.
+            api_key: Your Plant.id API key. Priority: 1. Provided key, 2. Streamlit Secrets, 3. .env file
         """
-        # Get API key from parameter or environment variable
-        self.api_key = api_key or os.getenv('PLANT_ID_API_KEY')
-        if not self.api_key:
-            raise ValueError("Plant.id API key not provided. Set PLANT_ID_API_KEY in .env file.")
+        # Priority 1: Use the key if provided directly
+        if api_key:
+            self.api_key = api_key
+        else:
+            try:
+                # Priority 2: Try to get the key from Streamlit Secrets (works on share.streamlit.io)
+                import streamlit as st
+                self.api_key = st.secrets["PLANT_ID_API_KEY"]
+                print("✅ API key loaded from Streamlit Secrets (for online app).")
+            except:
+                # Priority 3: Fall back to environment variable (for local development)
+                import os
+                from dotenv import load_dotenv
+                load_dotenv()
+                self.api_key = os.getenv('PLANT_ID_API_KEY')
+                if not self.api_key:
+                    raise ValueError("Plant.id API key not found. Set PLANT_ID_API_KEY in Streamlit Secrets or .env file.")
+                print("✅ API key loaded from .env file (for local testing).")
         
         # Initialize the API client
         self.api = PlantApi(api_key=self.api_key)
