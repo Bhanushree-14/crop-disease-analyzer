@@ -435,7 +435,7 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 - **Technical Support**: Priority support packages for production deployments
 
 ### Contact Information
-- **Project Maintainer**: [@Bhanushree-14](https://github.com/shukur-alom)
+- **Project Maintainer**: [@Bhanushree-14](https://github.com/Bhanushree-14)
 - **Project Repository**: [crop-disease-analyzer](https://github.com/Bhanushree-14/crop-disease-analyzer)
 - **Issue Tracking**: GitHub Issues for bug reports and feature requests
 - **Email Support**: Available through GitHub contact options
