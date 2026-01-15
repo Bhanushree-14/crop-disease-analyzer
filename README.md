@@ -61,8 +61,8 @@ The **DiseaseAnalysisResult DataClass** serves as a structured container for dis
 
 ### 1. Repository Setup
 **Clone the repository:**
-- Run: git clone https://github.com/shukur-alom/leaf-diseases-detect.git
-- Navigate to: cd leaf-diseases-detect/Front
+- Run: git clone https://github.com/Bhanushree-14/crop-disease-analyzer.git
+- Navigate to: cd crop-disease-analyzer
 
 **Create and activate virtual environment (recommended):**
 - Windows PowerShell: python -m venv venv then .\venv\Scripts\Activate.ps1
@@ -356,7 +356,7 @@ The analyze_leaf_image_base64 method follows these steps:
 
 ### Development Setup
 **Fork and clone the repository:**
-- Commands: git clone https://github.com/your-username/leaf-diseases-detect.git, cd leaf-diseases-detect/Front
+- Commands: git clone https://github.com/Bhanushree-14/crop-disease-analyzer.git, cd crop-disease-analyzer
 
 **Create development environment:**
 - Commands: python -m venv dev-env, .\dev-env\Scripts\Activate.ps1
@@ -424,8 +424,8 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 
 ### Getting Help
 - **📚 Documentation**: Complete guides in this README
-- **🐛 Bug Reports**: [GitHub Issues](https://github.com/shukur-alom/leaf-diseases-detect/issues)
-- **💡 Feature Requests**: [GitHub Discussions](https://github.com/shukur-alom/leaf-diseases-detect/discussions)
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/Bhanushree-14/crop-disease-analyzer/issues)
+- **💡 Feature Requests**: [GitHub Discussions](https://github.com/Bhanushree-14/crop-disease-analyzer/discussions)
 - **👥 Community**: Join our developer community for collaboration
 
 ### Professional Support
@@ -435,8 +435,8 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 - **Technical Support**: Priority support packages for production deployments
 
 ### Contact Information
-- **Project Maintainer**: [@shukur-alom](https://github.com/shukur-alom)
-- **Project Repository**: [leaf-diseases-detect](https://github.com/shukur-alom/leaf-diseases-detect)
+- **Project Maintainer**: [@Bhanushree-14](https://github.com/shukur-alom)
+- **Project Repository**: [crop-disease-analyzer](https://github.com/Bhanushree-14/crop-disease-analyzer)
 - **Issue Tracking**: GitHub Issues for bug reports and feature requests
 - **Email Support**: Available through GitHub contact options
 
@@ -482,7 +482,7 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 ![Plant Health](https://img.shields.io/badge/Plant%20Health-AI%20Powered-brightgreen?style=for-the-badge&logo=leaf)
 ![Precision Agriculture](https://img.shields.io/badge/Precision%20Agriculture-Innovation-orange?style=for-the-badge&logo=agriculture)
 
-[🚀 **Live Demo**](https://leaf-diseases-detect5.streamlit.app) • [🐛 **Report Issues**](https://github.com/shukur-alom/leaf-diseases-detect/issues) • [💡 **Request Features**](https://github.com/shukur-alom/leaf-diseases-detect/discussions)
+[🚀 **Live Demo**](https://crop-disease-analyzer5.streamlit.app) • [🐛 **Report Issues**](https://github.com/Bhanushree-14/crop-disease-analyzer/issues) • [💡 **Request Features**](https://github.com/Bhanushree-14/crop-disease-analyzer/discussions)
 
 **Star ⭐ this repository if it helped you protect your plants!**
 
