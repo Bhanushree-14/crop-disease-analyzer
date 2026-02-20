@@ -1,589 +1,512 @@
 ﻿import streamlit as st
-import random
 import base64
 import json
 import time
-from LeafDisease.main import LeafDiseaseDetector  # Import your real AI model
+import random
+import requests
+from datetime import datetime
+from Leaf_Disease.main import LeafDiseaseDetector
 
-# === PAGE CONFIG ===
+# === WEATHER FUNCTION ===
+def get_weather(city="Mumbai"):
+    try:
+        url = f"https://wttr.in/{city}?format=%t+%h+%w+%C"
+        response = requests.get(url, timeout=5)
+        weather_text = response.text.strip().split()
+        
+        if len(weather_text) >= 4:
+            return {
+                'temperature': weather_text[0],
+                'humidity': weather_text[1],
+                'wind': weather_text[2],
+                'condition': ' '.join(weather_text[3:])
+            }
+    except:
+        return None
+    return None
+
+# === PAGE CONFIG (ONLY ONCE!) ===
 st.set_page_config(
-    page_title="Rural Roots - AI Crop Doctor",
+    page_title="Kisaan Saathi - AI Crop Doctor",
     page_icon="🌾",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# === ENHANCED CSS WITH VISUAL ELEMENTS ===
+# === WEATHER SIDEBAR ===
+with st.sidebar:
+    st.markdown("## 🌤️ Weather for Farmers")
+    st.markdown("---")
+    
+    city = st.text_input("Enter Village/City", "Mumbai")
+    
+    if st.button("Get Weather", use_container_width=True):
+        weather_data = get_weather(city)
+        if weather_data:
+            st.session_state.weather = weather_data
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Temperature", weather_data['temperature'])
+                st.metric("Wind", weather_data['wind'])
+            with col2:
+                st.metric("Humidity", weather_data['humidity'])
+                st.write(f"**{weather_data['condition']}**")
+            
+            # Farming advice
+            st.markdown("---")
+            st.markdown("### 🌱 Advice")
+            if "rain" in weather_data['condition'].lower():
+                st.info("💧 Rain expected - Hold off on spraying")
+            elif "sun" in weather_data['condition'].lower() or "clear" in weather_data['condition'].lower():
+                st.success("☀️ Good day for farming!")
+            else:
+                st.warning("☁️ Check disease spread risk")
+        else:
+            st.error("Could not fetch weather")
+
+# === INJECT CLEAN CSS ===
 st.markdown("""
 <style>
-/* Vibrant but professional color scheme */
-:root {
-    --primary-green: #2e7d32;
-    --light-green: #e8f5e9;
-    --accent-orange: #ff9800;
-    --dark-text: #1b5e20;
-    --light-bg: #f8fdf8;
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 .stApp {
-    background: var(--light-bg);
-    background-image: radial-gradient(#c8e6c9 1px, transparent 1px);
-    background-size: 20px 20px;
-    font-family: 'Segoe UI', 'Arial', sans-serif;
+    background: linear-gradient(135deg, #1e5128 0%, #2e7d32 100%);
 }
 
-/* Hero Header with subtle pattern */
-.hero-header {
-    background: linear-gradient(135deg, var(--primary-green) 0%, #4caf50 100%);
-    padding: 2.5rem 1.5rem;
-    border-radius: 0 0 25px 25px;
-    margin: -1rem -1rem 2rem -1rem;
+/* Hero Section */
+.hero-section {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 30px;
+    padding: 40px 20px;
+    margin-bottom: 30px;
     text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
     color: white;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 8px 24px rgba(46, 125, 50, 0.2);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    margin-bottom: 10px;
 }
 
-.hero-header::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path fill="rgba(255,255,255,0.05)" d="M50,20 C65,20 77,32 77,47 C77,62 65,74 50,74 C35,74 23,62 23,47 C23,32 35,20 50,20 Z"/></svg>');
-    opacity: 0.3;
-}
-
-.app-title {
-    font-size: 2.8rem;
-    font-weight: 800;
-    margin-bottom: 0.5rem;
-    position: relative;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-}
-
-.app-tagline {
+.hero-subtitle {
     font-size: 1.2rem;
-    opacity: 0.95;
-    max-width: 600px;
-    margin: 0 auto;
-    font-weight: 300;
+    color: rgba(255,255,255,0.9);
 }
 
-/* Feature Cards with subtle shadows */
-.feature-card {
+/* Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.stat-card {
     background: white;
-    border-radius: 18px;
-    padding: 1.8rem;
-    margin: 1.2rem 0;
-    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.12);
-    border: 2px solid #e8f5e9;
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.feature-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(46, 125, 50, 0.18);
-}
-
-.feature-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 6px;
-    height: 100%;
-    background: linear-gradient(to bottom, var(--primary-green), #81c784);
-    border-radius: 18px 0 0 18px;
-}
-
-/* Step Indicator */
-.step-indicator {
-    display: inline-block;
-    background: var(--primary-green);
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    padding: 20px;
+    border-radius: 20px;
     text-align: center;
-    line-height: 32px;
-    font-weight: bold;
-    margin-right: 10px;
-    box-shadow: 0 3px 8px rgba(46, 125, 50, 0.3);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-/* Action Button */
-.action-button {
-    background: linear-gradient(135deg, var(--primary-green), #388e3c);
-    color: white;
-    border: none;
-    padding: 1.2rem 2rem;
-    font-size: 1.3rem;
-    font-weight: 600;
-    border-radius: 14px;
-    width: 100%;
-    margin: 1rem 0;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 6px 16px rgba(46, 125, 50, 0.25);
-    position: relative;
-    overflow: hidden;
-}
-
-.action-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(46, 125, 50, 0.35);
-}
-
-.action-button::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: 0.5s;
-}
-
-.action-button:hover::after {
-    left: 100%;
-}
-
-/* Language Tags */
-.language-pill {
-    display: inline-block;
-    background: linear-gradient(135deg, #fff3e0, #ffecb3);
-    color: #ff8f00;
-    padding: 0.5rem 1.2rem;
-    margin: 0.3rem;
-    border-radius: 25px;
-    font-weight: 500;
-    border: 1px solid #ffcc80;
-    box-shadow: 0 2px 6px rgba(255, 152, 0, 0.15);
-    transition: all 0.2s;
-}
-
-.language-pill:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(255, 152, 0, 0.25);
-}
-
-/* Result Card */
-.result-card {
-    background: linear-gradient(135deg, #f1f8e9, #e8f5e9);
-    border-radius: 16px;
-    padding: 2rem;
-    margin: 1.5rem 0;
-    border-left: 6px solid var(--primary-green);
-    animation: fadeIn 0.6s ease-out;
-    box-shadow: 0 6px 18px rgba(46, 125, 50, 0.15);
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Voice Box */
-.voice-feature {
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-    border-radius: 14px;
-    padding: 1.5rem;
-    margin: 1rem 0;
-    border: 2px solid #90caf9;
-    text-align: center;
-    position: relative;
-}
-
-/* Stats Box */
-.stats-box {
-    background: white;
-    border-radius: 14px;
-    padding: 1rem;
-    text-align: center;
-    border: 2px solid #e8f5e9;
-    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.1);
-}
-
-.stats-value {
+.stat-value {
     font-size: 2.2rem;
-    font-weight: 800;
-    color: var(--primary-green);
-    margin: 0.5rem 0;
+    font-weight: 700;
+    color: #2e7d32;
+    margin-bottom: 5px;
 }
 
-.stats-label {
+.stat-label {
     font-size: 0.9rem;
     color: #666;
 }
 
-/* Mobile Optimizations */
+/* Feature Cards */
+.feature-card {
+    background: white;
+    border-radius: 25px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.feature-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.step-badge {
+    background: #2e7d32;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    margin-right: 15px;
+}
+
+.feature-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Language Pills */
+.language-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.language-pill {
+    background: #2e7d32;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Result Card */
+.result-card {
+    background: white;
+    border-radius: 25px;
+    padding: 30px;
+    margin: 20px 0;
+    border-left: 8px solid #2e7d32;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.disease-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.confidence-meter {
+    width: 100%;
+    height: 10px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    margin: 15px 0;
+    overflow: hidden;
+}
+
+.confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2e7d32, #4caf50);
+    border-radius: 10px;
+}
+
+.severity-badge {
+    display: inline-block;
+    padding: 4px 15px;
+    border-radius: 20px;
+    color: white;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-left: 10px;
+}
+
+.severity-mild { background: #4caf50; }
+.severity-moderate { background: #ff9800; }
+.severity-severe { background: #f44336; }
+.severity-none { background: #2196f3; }
+
+/* Analyze Button */
+.analyze-btn {
+    background: linear-gradient(135deg, #2e7d32, #4caf50);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    border-radius: 15px;
+    width: 100%;
+    cursor: pointer;
+    margin: 20px 0;
+    transition: all 0.3s ease;
+}
+
+.analyze-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(46, 125, 50, 0.4);
+}
+
+/* Chat Bubbles */
+.chat-bubble-farmer {
+    background: #e3f2fd;
+    padding: 15px 20px;
+    border-radius: 25px 25px 25px 5px;
+    max-width: 80%;
+    margin: 10px 0;
+}
+
+.chat-bubble-ai {
+    background: #f1f8e9;
+    padding: 15px 20px;
+    border-radius: 25px 25px 5px 25px;
+    max-width: 80%;
+    margin: 10px 0 10px auto;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 30px;
+    color: white;
+}
+
+/* Mobile Responsive */
 @media (max-width: 768px) {
-    .app-title { font-size: 2.2rem; }
-    .feature-card { padding: 1.4rem; }
-    .action-button { padding: 1rem; font-size: 1.1rem; }
-    .language-pill { padding: 0.4rem 1rem; font-size: 0.9rem; }
+    .hero-title { font-size: 2.5rem; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 """, unsafe_allow_html=True)
 
-# === ENHANCED PEST DATABASE ===
-PEST_SOLUTIONS = {
-    "Chlorosis": {
-        "icon": "🥀",
-        "severity": "Moderate",
-        "solution": "**Nutrient Treatment**: Apply iron chelates or Epsom salt solution. Adjust soil pH to 6.0-6.5. Add organic compost rich in micronutrients.",
-        "hindi_voice": "पत्तों का पीलापन (क्लोरोसिस) है। मिट्टी में आयरन और मैग्नीशियम की कमी है। जैविक खाद और आयरन चेलेट्स का प्रयोग करें।",
-        "prevention": "Test soil pH regularly. Use balanced organic fertilizers. Ensure proper drainage.",
-        "organic": ["Iron chelates", "Epsom salt spray", "Compost tea", "Neem cake"]
-    },
-    "Aphids": {
-        "icon": "🦟",
-        "severity": "Moderate",
-        "solution": "**Neem Oil Spray**: Mix 5ml neem oil with 1 liter water. Spray every 3 days for 2 weeks.",
-        "hindi_voice": "किसान भाइयों, एफिड कीड़ों के लिए नीम का तेल छिड़काव करें। 5ml नीम तेल 1 लीटर पानी में मिलाएं, हफ्ते में 2 बार छिड़काव करें।",
-        "prevention": "Plant marigolds around crops. Release ladybugs (natural predators).",
-        "organic": ["Neem oil", "Garlic-chili spray", "Soap water solution", "Ladybugs"]
-    },
-    "Caterpillars": {
-        "icon": "🐛",
-        "severity": "High",
-        "solution": "**Hand Picking**: Remove manually early morning. **BT Spray**: Use Bacillus thuringiensis organic spray.",
-        "hindi_voice": "इल्लियों को सुबह जल्दी हाथ से इकट्ठा करें। बीटी स्प्रे का छिड़काव करें, यह प्राकृतिक बैक्टीरिया है।",
-        "prevention": "Install bird perches. Use neem cake in soil.",
-        "organic": ["Hand picking", "BT spray", "Neem cake", "Bird perches"]
-    },
-    "Spider Mites": {
-        "icon": "🕷️",
-        "severity": "Moderate",
-        "solution": "**Water Spray**: Strong jet of water to dislodge mites. **Neem + Soap**: 5ml neem + 2ml soap in 1L water.",
-        "hindi_voice": "स्पाइडर माइट्स के लिए पत्तों पर पानी का तेज छिड़काव करें। नीम तेल और साबुन का मिश्रण बनाएं।",
-        "prevention": "Increase humidity. Release predatory mites.",
-        "organic": ["Water spray", "Neem + soap", "Predatory mites", "Humidity"]
-    },
-    "Powdery Mildew": {
-        "icon": "🍄",
-        "severity": "High",
-        "solution": "**Baking Soda Spray**: Mix 1 tbsp baking soda + 1 tsp liquid soap in 1L water. Spray weekly.",
-        "hindi_voice": "पाउडरी मिल्ड्यू (सफेद फफूंद) है। 1 चम्मच बेकिंग सोडा और साबुन 1 लीटर पानी में मिलाकर छिड़काव करें।",
-        "prevention": "Improve air circulation. Water at soil level, not leaves.",
-        "organic": ["Baking soda", "Milk spray", "Sulfur dust", "Proper spacing"]
-    },
-    "Bacterial Blight": {
-        "icon": "🦠",
-        "severity": "Severe",
-        "solution": "**Copper Fungicide**: Apply copper-based spray. Remove infected leaves immediately.",
-        "hindi_voice": "बैक्टीरियल ब्लाइट है। तांबे आधारित फफूंदनाशक का छिड़काव करें। संक्रमित पत्तियां तुरंत हटाएं।",
-        "prevention": "Avoid overhead watering. Use disease-free seeds.",
-        "organic": ["Copper spray", "Garlic extract", "Crop rotation", "Sanitation"]
-    },
-    "Healthy": {
-        "icon": "✅",
-        "severity": "None",
-        "solution": "**Your crop is healthy!** Continue regular neem spray every 15 days as preventive measure.",
-        "hindi_voice": "बधाई हो! आपकी फसल पूरी तरह स्वस्थ है। नियमित नीम स्प्रे जारी रखें।",
-        "prevention": "Maintain crop diversity. Regular monitoring.",
-        "organic": ["Neem spray", "Crop rotation", "Organic compost", "Monitoring"]
-    }
-}
+# === INITIALIZE SESSION STATE ===
+if 'detector' not in st.session_state:
+    with st.spinner("🚀 Loading AI Model..."):
+        st.session_state.detector = LeafDiseaseDetector()
+        time.sleep(1)
 
-# === HERO HEADER ===
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+
+if 'analysis_done' not in st.session_state:
+    st.session_state.analysis_done = False
+
+if 'current_disease' not in st.session_state:
+    st.session_state.current_disease = None
+
+# === HERO SECTION ===
 st.markdown("""
-<div class="hero-header">
-    <div class="app-title">🌾 Rural Roots</div>
-    <div class="app-tagline">India's Smart AI Crop Doctor • Free for Farmers</div>
+<div class="hero-section">
+    <h1 class="hero-title">🌾 Kisaan Saathi</h1>
+    <p class="hero-subtitle">AI Crop Doctor • किसानों का अपना AI सहायक</p>
 </div>
 """, unsafe_allow_html=True)
 
-# === QUICK STATS ===
-st.markdown("### 📊 Trusted by Farmers Across India")
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    st.markdown("""
-    <div class="stats-box">
-        <div class="stats-value">50K+</div>
-        <div class="stats-label">Farmers Helped</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    st.markdown("""
-    <div class="stats-box">
-        <div class="stats-value">40%</div>
-        <div class="stats-label">Crop Loss Reduced</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col3:
-    st.markdown("""
-    <div class="stats-box">
-        <div class="stats-value">95%</div>
-        <div class="stats-label">Accuracy Rate</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col4:
-    st.markdown("""
-    <div class="stats-box">
-        <div class="stats-value">6</div>
-        <div class="stats-label">Languages</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# === STEP 1: UPLOAD SECTION ===
-st.markdown("""<div class="feature-card">""", unsafe_allow_html=True)
-
+# === STATS CARDS ===
 st.markdown("""
-<div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
-    <div class="step-indicator">1</div>
-    <h3 style="margin: 0; color: var(--dark-text);">📸 Upload Crop Photo</h3>
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">50K+</div>
+        <div class="stat-label">Farmers Helped</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">95%</div>
+        <div class="stat-label">Accuracy</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">6</div>
+        <div class="stat-label">Languages</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">24/7</div>
+        <div class="stat-label">Support</div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-col1, col2 = st.columns([2, 1])
-
-with col1:
-    uploaded_file = st.file_uploader(
-        "**Drag & drop or click to upload**",
-        type=["jpg", "jpeg", "png"],
-        help="Clear, close-up photos work best",
-        label_visibility="visible"
-    )
-    
-    if uploaded_file:
-        st.image(uploaded_file, caption="Your crop photo", width="stretch")
-with col2:
-    st.markdown("""
-    <div style="padding: 1rem; background: #f9f9f9; border-radius: 10px;">
-        <h4 style="margin-top: 0;">📝 Tips:</h4>
-        <ul style="margin: 0; padding-left: 1.2rem;">
-            <li>Take in daylight</li>
-            <li>Focus on affected area</li>
-            <li>Include leaf & stem</li>
-            <li>Avoid blurry photos</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("""</div>""", unsafe_allow_html=True)
-
-# === STEP 2: PROBLEM SELECTION ===
-st.markdown("""<div class="feature-card">""", unsafe_allow_html=True)
-
+# === LANGUAGE SELECTOR ===
 st.markdown("""
-<div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
-    <div class="step-indicator">2</div>
-    <h3 style="margin: 0; color: var(--dark-text);">🔍 Select Problem Type</h3>
+<div class="language-container">
+    <span class="language-pill">🇮🇳 हिंदी</span>
+    <span class="language-pill">🇬🇧 English</span>
+    <span class="language-pill">🇮🇳 தமிழ்</span>
+    <span class="language-pill">🇮🇳 తెలుగు</span>
+    <span class="language-pill">🇮🇳 മലയാളം</span>
+    <span class="language-pill">🇮🇳 বাংলা</span>
 </div>
 """, unsafe_allow_html=True)
 
-problem_type = st.radio(
-    "What seems to be the issue?",
-    ["Leaf Diseases 🍂", "Pest Attack 🐛", "Nutrient Deficiency 🥀", "General Checkup ✅"],
-    horizontal=False,
-    key="problem_type"
+# === UPLOAD SECTION ===
+st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+st.markdown("""
+<div class="feature-header">
+    <div class="step-badge">📸</div>
+    <h3 class="feature-title">Upload Crop Photo</h3>
+</div>
+""", unsafe_allow_html=True)
+
+uploaded_file = st.file_uploader(
+    "Choose a leaf image...",
+    type=["jpg", "jpeg", "png"],
+    label_visibility="collapsed"
 )
 
-st.markdown("""</div>""", unsafe_allow_html=True)
-
-# === ANALYSIS BUTTON ===
 if uploaded_file:
-    if st.button("🩺 **ANALYZE MY CROP NOW**", key="analyze_main", type="primary", use_container_width=True):
-        
-        # REAL AI ANALYSIS - NO MORE RANDOM RESULTS
-        try:
-            with st.spinner("🔬 Our AI is examining your crop... This takes about 10 seconds."):
-                # Create progress bar
-                progress_bar = st.progress(0)
-                
-                # Step 1: Initialize AI detector (20%)
-                progress_bar.progress(20)
-                detector = LeafDiseaseDetector()
-                
-                # Step 2: Convert image to base64 (40%)
-                progress_bar.progress(40)
+    # Display image
+    st.image(uploaded_file, caption="Your Crop Photo", use_container_width=True)
+    
+    # Question input
+    farmer_query = st.text_area(
+        "आपका सवाल (Optional)",
+        placeholder="Example: टमाटर के पत्तों पर भूरे धब्बे हैं...",
+        height=80
+    )
+    
+    # ANALYZE BUTTON - Always visible when file is uploaded
+    st.markdown("---")
+    
+    if st.button("🔍 ANALYZE MY CROP", use_container_width=True, type="primary"):
+        with st.spinner("🤖 AI is analyzing your crop..."):
+            try:
+                # Process image
                 file_bytes = uploaded_file.getvalue()
                 base64_image = base64.b64encode(file_bytes).decode('utf-8')
                 
-                # Step 3: Get AI analysis (60%)
-                progress_bar.progress(60)
-                analysis_result = detector.analyze_leaf_image_base64(base64_image)
+                # Get AI analysis
+                analysis_result = st.session_state.detector.analyze_leaf_image_base64(base64_image)
                 
-                # Step 4: Process result (80%)
-                progress_bar.progress(80)
+                # Store results
+                st.session_state.analysis_done = True
+                st.session_state.current_disease = analysis_result
                 
-                # Extract disease name from AI result
-                if analysis_result.get("disease_detected", False):
-                    disease_name = analysis_result.get("disease_name", "Unknown Disease")
-                    
-                    # Check if we have predefined solution, otherwise create dynamic one
-                    if disease_name in PEST_SOLUTIONS:
-                        pest_name = disease_name
-                        data = PEST_SOLUTIONS[disease_name]
-                    else:
-                        pest_name = disease_name
-                        # Create dynamic result from AI analysis
-                        treatments = analysis_result.get("treatment", ["Consult agricultural expert."])
-                        if isinstance(treatments, list):
-                            treatment_text = treatments[0] if treatments else "No specific treatment provided."
-                        else:
-                            treatment_text = str(treatments)
-                        
-                        data = {
-                            "icon": "🔍",
-                            "severity": analysis_result.get("severity", "moderate"),
-                            "solution": f"**AI Diagnosis**: {disease_name}. {treatment_text}",
-                            "hindi_voice": f"AI ने '{disease_name}' का पता लगाया है। उपचार: {treatment_text}",
-                            "prevention": ". ".join(analysis_result.get("possible_causes", ["Maintain proper nutrition and soil health"])),
-                            "organic": ["AI Recommended Treatment"] + (analysis_result.get("treatment", [])[:2] if isinstance(analysis_result.get("treatment"), list) else [])
-                        }
-                else:
-                    pest_name = "Healthy"
-                    data = PEST_SOLUTIONS["Healthy"]
+                # Use default question if none provided
+                if not farmer_query:
+                    farmer_query = "What disease does my crop have?"
                 
-                # Complete progress (100%)
-                progress_bar.progress(100)
-                time.sleep(0.5)  # Brief pause to show completion
+                # Create AI response
+                disease_name = analysis_result.get('disease_name', 'Unknown')
+                treatment = analysis_result.get('treatment', 'Consult expert')
+                hindi_msg = analysis_result.get('hindi_message', '')
                 
-        except Exception as e:
-            st.error(f"⚠️ AI Analysis Failed: {str(e)[:100]}... Using basic analysis.")
-            # Fallback if AI fails (shouldn't happen now)
-            pest_name = "Healthy"
-            data = PEST_SOLUTIONS["Healthy"]
-        
-        # Display Results
-        st.markdown(f"""<div class="result-card">""", unsafe_allow_html=True)
-        
-        if pest_name == "Healthy":
-            st.markdown(f"### {data['icon']} **CROP IS HEALTHY!**")
-            st.balloons()
-            st.success("### Excellent farming! Your crop shows no signs of disease or pests.")
-        else:
-            st.markdown(f"### {data['icon']} **{pest_name.upper()} DETECTED**")
-            st.warning(f"### Severity: **{data['severity']}** - Immediate action recommended")
-        
-        st.markdown("---")
-        
-        # Solution Details
-        st.markdown("#### 💡 **Recommended Solution:**")
-        st.info(data["solution"])
-        
-        # Organic Methods
-        st.markdown("#### 🌱 **Organic Control Methods:**")
-        if len(data["organic"]) <= 4:
-            cols = st.columns(len(data["organic"]))
-            for idx, method in enumerate(data["organic"]):
-                with cols[idx]:
-                    st.markdown(f"""
-                    <div style="text-align: center; padding: 0.5rem; background: #f1f8e9; 
-                                border-radius: 8px; border: 1px solid #c8e6c9;">
-                        {method}
-                    </div>
-                    """, unsafe_allow_html=True)
-        else:
-            for method in data["organic"]:
-                st.markdown(f"- {method}")
-        
-        # Hindi Voice
-        st.markdown("#### 🎤 **Hindi Voice Instruction:**")
-        st.markdown(f"""
-        <div class="voice-feature">
-            <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">👨‍🌾 किसान भाई सुनिए:</div>
-            <div style="font-size: 1rem; line-height: 1.5;">{data['hindi_voice']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Prevention
-        st.markdown("#### 🛡️ **Prevention Tips:**")
-        st.write(data["prevention"])
-        
-        # Show AI Confidence if available
-        if 'analysis_result' in locals() and 'confidence' in analysis_result:
-            st.markdown(f"#### 📊 **AI Confidence:** {analysis_result.get('confidence', 'N/A')}%")
-        
-        st.markdown("""</div>""", unsafe_allow_html=True)
+                ai_response = f"""🌾 नमस्ते किसान भाई!
 
-# === VOICE & LANGUAGE FEATURES ===
-st.markdown("""<div class="feature-card">""", unsafe_allow_html=True)
+मैंने आपकी फसल की जांच कर ली है। आपके पौधों में **{disease_name}** है।
 
-st.markdown("### 🎤 Voice & Language Support")
+💊 **उपचार / Treatment:**
+• {treatment}
 
-col1, col2 = st.columns(2)
+{hindi_msg}
 
-with col1:
-    st.markdown("""
-    <div class="voice-feature">
-        <h4 style="margin-top: 0;">Speak in Your Language</h4>
-        <p style="font-size: 1.1rem; font-weight: bold; color: #1565c0;">
-        "मेरी फसल में कीड़े लग गए हैं"
-        </p>
-        <p><em>"Meri fasal mein keede lag gaye hain"</em></p>
-        <p style="color: var(--primary-green); font-weight: bold;">
-        → AI understands & replies in Hindi!
-        </p>
+📊 **विश्लेषण समय:** {datetime.now().strftime("%I:%M %p")}
+
+कोई और सवाल हो तो पूछिए! 🌾"""
+                
+                st.session_state.chat_history.append({
+                    "farmer": farmer_query,
+                    "ai": ai_response,
+                    "time": datetime.now().strftime("%H:%M")
+                })
+                
+                st.rerun()
+                
+            except Exception as e:
+                st.error(f"⚠️ Error: {str(e)}")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# === DISPLAY RESULTS ===
+if st.session_state.analysis_done and st.session_state.current_disease:
+    disease = st.session_state.current_disease
+    
+    # Get severity class
+    severity = disease.get('severity', 'moderate')
+    severity_class = {
+        'mild': 'severity-mild',
+        'moderate': 'severity-moderate',
+        'severe': 'severity-severe',
+        'none': 'severity-none'
+    }.get(severity, 'severity-moderate')
+    
+    st.markdown('<div class="result-card">', unsafe_allow_html=True)
+    
+    # Disease title with severity
+    st.markdown(f"""
+    <div class="disease-title">
+        {disease.get('disease_name', 'Unknown')}
+        <span class="severity-badge {severity_class}">{severity.upper()}</span>
     </div>
     """, unsafe_allow_html=True)
-
-with col2:
-    st.markdown("""
-    <div style="text-align: center;">
-        <h4>Supported Languages</h4>
-        <div style="margin: 1rem 0;">
-            <span class="language-pill">हिंदी</span>
-            <span class="language-pill">தமிழ்</span>
-            <span class="language-pill">తెలుగు</span>
-            <span class="language-pill">മലയാളം</span>
-            <span class="language-pill">বাংলা</span>
-            <span class="language-pill">ગુજરાતી</span>
+    
+    # Confidence meter
+    confidence = disease.get('confidence', 0.85) * 100
+    st.markdown(f"""
+    <div style="margin: 15px 0;">
+        <div style="display: flex; justify-content: space-between;">
+            <span>Confidence</span>
+            <span>{confidence:.1f}%</span>
         </div>
-        <p style="font-size: 0.9rem; color: #666;">
-        Voice analysis & solutions in regional languages
-        </p>
+        <div class="confidence-meter">
+            <div class="confidence-fill" style="width: {confidence}%;"></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
-
-st.markdown("""</div>""", unsafe_allow_html=True)
-
-# === QUICK ACTIONS ===
-st.markdown("### ⚡ Quick Actions")
-action_col1, action_col2, action_col3 = st.columns(3)
-
-with action_col1:
-    if st.button("📞 **Expert Helpline**", use_container_width=True):
-        st.session_state.show_help = True
-
-with action_col2:
-    if st.button("📚 **Farming Tips**", use_container_width=True):
-        st.session_state.show_tips = True
-
-with action_col3:
-    if st.button("🌧️ **Weather**", use_container_width=True):
-        st.session_state.show_weather = True
-
-# Show help if requested
-if 'show_help' in st.session_state and st.session_state.show_help:
-    st.info("**Free Farmer Helpline: 1800-123-4567**\n\nAvailable 7AM-7PM, 7 days a week.\nExpert advice in Hindi, Tamil, Telugu.")
-
-if 'show_tips' in st.session_state and st.session_state.show_tips:
-    st.success("**Daily Farming Tip:**\n\nSpray neem solution every 15 days as preventive measure. It's natural and protects against 200+ pests.")
+    
+    # Disease Type
+    disease_type = disease.get('disease_type', 'unknown')
+    st.markdown(f"**Type:** {disease_type.title()}")
+    
+    # Symptoms
+    symptoms = disease.get('symptoms', [])
+    if symptoms:
+        st.markdown("### 🔍 Symptoms")
+        for symptom in symptoms:
+            st.markdown(f"- {symptom}")
+    
+    # Treatment
+    treatment = disease.get('treatment', 'Consult expert')
+    st.markdown("### 💊 Treatment")
+    st.info(treatment)
+    
+    # Organic Solutions
+    organic = disease.get('organic_solutions', [])
+    if organic:
+        st.markdown("### 🌱 Organic Solutions")
+        for solution in organic:
+            st.markdown(f"- {solution}")
+    
+    # Possible Causes
+    causes = disease.get('possible_causes', [])
+    if causes:
+        st.markdown("### ⚠️ Possible Causes")
+        for cause in causes:
+            st.markdown(f"- {cause}")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Chat History
+    if st.session_state.chat_history:
+        st.markdown("### 💬 Conversation")
+        for chat in st.session_state.chat_history[-3:]:
+            st.markdown(f"""
+            <div class="chat-bubble-farmer">
+                <strong>👨‍🌾 You ({chat['time']}):</strong><br>
+                {chat['farmer']}
+            </div>
+            <div class="chat-bubble-ai">
+                <strong>🤖 AI ({chat['time']}):</strong><br>
+                {chat['ai']}
+            </div>
+            """, unsafe_allow_html=True)
 
 # === FOOTER ===
-st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #666; padding: 1.5rem;">
-    <p style="font-size: 0.9rem; margin: 0.5rem 0;">
-    <strong>🌾 Rural Roots</strong> • Free AI Crop Doctor for Indian Farmers
-    </p>
-    <p style="font-size: 0.8rem; margin: 0.5rem 0;">
-    Works offline • No internet required • 100% Free
-    </p>
-    <p style="font-size: 0.8rem; margin: 0.5rem 0; color: var(--primary-green);">
-    Made with ❤️ for India's farmers
-    </p>
+<div class="footer">
+    🌾 Made with ❤️ for India's Farmers • किसानों के लिए बना<br>
+    © 2026 Kisaan Saathi • Free AI Crop Doctor
 </div>
 """, unsafe_allow_html=True)
